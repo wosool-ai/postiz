@@ -1,0 +1,94 @@
+# Postiz on the Wosool box — /opt/postiz. A SEPARATE project that shares the wosool-hub edge
+# (wosool-hub docs/DEPLOY.md: own compose under /opt/<project>, site block in /opt/wosool-hub/sites/).
+# Every image is GHCR and pinned by digest (owner: production pulls nothing from Docker Hub).
+# Only `postiz` joins the edge network; postgres/redis/temporal stay on the private network, no host ports.
+services:
+  postiz:
+    image: ghcr.io/gitroomhq/postiz-app:v2.26.0@sha256:875e61ac5d0ac43c3dec78a78a7032dfb03d9a8c6d4936ebb18adb606cc207c5
+    container_name: postiz
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MAIN_URL: https://monitoring.wosool.ai
+      FRONTEND_URL: https://monitoring.wosool.ai
+      NEXT_PUBLIC_BACKEND_URL: https://monitoring.wosool.ai/api
+      BACKEND_INTERNAL_URL: http://localhost:3000
+      DATABASE_URL: postgresql://postiz:${POSTGRES_PASSWORD}@postiz-postgres:5432/postiz
+      REDIS_URL: redis://postiz-redis:6379
+      TEMPORAL_ADDRESS: postiz-temporal:7233
+      IS_GENERAL: 'true'
+      STORAGE_PROVIDER: local
+      UPLOAD_DIRECTORY: /uploads
+      NEXT_PUBLIC_UPLOAD_DIRECTORY: /uploads
+      NX_ADD_PLUGINS: 'false'
+    volumes:
+      - postiz-config:/config
+      - postiz-uploads:/uploads
+    networks: [postiz-private, wosool-network]
+    depends_on:
+      postiz-postgres: { condition: service_healthy }
+      postiz-redis: { condition: service_healthy }
+      postiz-temporal: { condition: service_started }
+
+  postiz-postgres:
+    # wosool-hub mirror of postgres:16-alpine (deploy/base-images.txt), already pulled by this box.
+    image: ghcr.io/nilscript-org/base-postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    container_name: postiz-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postiz
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run install.sh, it writes .env}
+      POSTGRES_DB: postiz
+    volumes:
+      - postiz-postgres:/var/lib/postgresql/data
+    networks: [postiz-private]
+    healthcheck:
+      test: pg_isready -U postiz -d postiz
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  postiz-redis:
+    # wosool-hub mirror of redis:7-alpine (deploy/base-images.txt).
+    image: ghcr.io/nilscript-org/base-redis:7-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
+    container_name: postiz-redis
+    restart: unless-stopped
+    volumes:
+      - postiz-redis:/data
+    networks: [postiz-private]
+    healthcheck:
+      test: redis-cli ping
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  postiz-temporal:
+    # GHCR mirror of temporalio/auto-setup:1.28.1 made by .github/workflows/wosool-mirror-temporal.yml.
+    # Shares postiz-postgres (creates its own `temporal` + `temporal_visibility` databases);
+    # SQL visibility, no Elasticsearch (saves ~1 GB RAM on a shared box).
+    image: ghcr.io/wosool-ai/base-temporal-auto-setup:1.28.1@${TEMPORAL_DIGEST:?set TEMPORAL_DIGEST (sha256:...) from the mirror run}
+    container_name: postiz-temporal
+    restart: unless-stopped
+    environment:
+      DB: postgres12
+      DB_PORT: '5432'
+      POSTGRES_USER: postiz
+      POSTGRES_PWD: ${POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: postiz-postgres
+      ENABLE_ES: 'false'
+      TEMPORAL_NAMESPACE: default
+    networks: [postiz-private]
+    depends_on:
+      postiz-postgres: { condition: service_healthy }
+
+volumes:
+  postiz-config:
+  postiz-uploads:
+  postiz-postgres:
+  postiz-redis:
+
+networks:
+  postiz-private:
+  wosool-network:
+    external: true
+    name: wosool-hub_wosool-network

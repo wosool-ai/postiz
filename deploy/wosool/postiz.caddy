@@ -1,0 +1,18 @@
+# monitoring.wosool.ai -> Postiz. Lives at /opt/wosool-hub/sites/postiz.caddy (owned by the postiz
+# project, not wosool-hub). Caddy runs `admin off`: after changing this file, `docker restart wosool-caddy`.
+monitoring.wosool.ai {
+	encode zstd gzip
+	request_body {
+		max_size 1GB
+	}
+	reverse_proxy postiz:5000 {
+		# MCP uses streamable HTTP: never buffer responses.
+		flush_interval -1
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}

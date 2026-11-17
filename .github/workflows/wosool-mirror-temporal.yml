@@ -1,0 +1,22 @@
+# Wosool: copy temporalio/auto-setup into GHCR byte for byte, so the box pulls nothing from Docker Hub.
+name: wosool-mirror-temporal
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - name: copy
+        run: |
+          docker buildx imagetools create -t ghcr.io/wosool-ai/base-temporal-auto-setup:1.28.1 docker.io/temporalio/auto-setup:1.28.1
+          echo "upstream: $(docker buildx imagetools inspect docker.io/temporalio/auto-setup:1.28.1 | awk '/^Digest:/{print $2; exit}')"
+          echo "TEMPORAL_DIGEST=$(docker buildx imagetools inspect ghcr.io/wosool-ai/base-temporal-auto-setup:1.28.1 | awk '/^Digest:/{print $2; exit}')" | tee -a "$GITHUB_STEP_SUMMARY"
