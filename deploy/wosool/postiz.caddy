@@ -5,6 +5,10 @@ monitoring.wosool.ai {
 	request_body {
 		max_size 1GB
 	}
+	# MCP OAuth: the backend lives under /api here, but its OAuth metadata names the resource and the discovery
+	# documents at the root (/mcp-oauth-*, /.well-known/oauth-*). Send exactly those paths to the backend.
+	@mcpoauth path /mcp-oauth-* /.well-known/oauth-protected-resource* /.well-known/oauth-authorization-server*
+	rewrite @mcpoauth /api{uri}
 	reverse_proxy postiz:5000 {
 		# MCP uses streamable HTTP: never buffer responses.
 		flush_interval -1
