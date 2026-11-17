@@ -5,6 +5,8 @@ monitoring.wosool.ai {
 	request_body {
 		max_size 1GB
 	}
+	# TikTok developer URL-prefix ownership (keep it: TikTok may re-check it).
+	respond /tiktokmCCj7m2dY7HsE90V1IRIzt4VmmDiWblU.txt "tiktok-developers-site-verification=mCCj7m2dY7HsE90V1IRIzt4VmmDiWblU" 200
 	# MCP OAuth: the backend lives under /api here, but its OAuth metadata names the resource and the discovery
 	# documents at the root (/mcp-oauth-*, /.well-known/oauth-*). Send exactly those paths to the backend.
 	@mcpoauth path /mcp-oauth-* /.well-known/oauth-protected-resource* /.well-known/oauth-authorization-server*
