@@ -5,13 +5,12 @@ and `.github/workflows/wosool-mirror-temporal.yml`. Upstream workflows are disab
 Sync upstream: `git fetch upstream && git merge upstream/main` (no conflicts: our files are our own paths).
 
 ## Install (owner, on the box)
-1. Actions → `wosool-mirror-temporal` → Run. Copy `TEMPORAL_DIGEST=sha256:…` from the run summary.
+1. Temporal is already mirrored (run 44032007805, digest pinned in the compose). Re-run
+   `wosool-mirror-temporal` only when upgrading Temporal.
 2. On the box:
    ```
    git clone https://github.com/wosool-ai/postiz /opt/postiz-src
-   bash /opt/postiz-src/deploy/wosool/install.sh      # first run writes /opt/postiz/.env and stops
-   nano /opt/postiz/.env                              # paste TEMPORAL_DIGEST
-   bash /opt/postiz-src/deploy/wosool/install.sh      # pulls, starts, adds the edge site, probes
+   bash /opt/postiz-src/deploy/wosool/install.sh      # writes .env secrets, pulls, starts, adds the edge site, probes
    ```
 3. Open https://monitoring.wosool.ai, register the admin account, then set `DISABLE_REGISTRATION=true`
    in `/opt/postiz/.env` and `cd /opt/postiz && docker compose up -d`.

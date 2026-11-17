@@ -18,8 +18,6 @@ if [ ! -f "$DST/.env" ]; then
   chmod 600 "$DST/.env"
   echo "wrote $DST/.env (secrets generated)"
 fi
-grep -q '^TEMPORAL_DIGEST=sha256:' "$DST/.env" || {
-  echo "STOP: set TEMPORAL_DIGEST=sha256:... in $DST/.env (from the mirror workflow run), then re-run."; exit 1; }
 
 cd "$DST"
 docker compose config -q

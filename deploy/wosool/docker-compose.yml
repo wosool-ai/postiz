@@ -66,7 +66,7 @@ services:
     # GHCR mirror of temporalio/auto-setup:1.28.1 made by .github/workflows/wosool-mirror-temporal.yml.
     # Shares postiz-postgres (creates its own `temporal` + `temporal_visibility` databases);
     # SQL visibility, no Elasticsearch (saves ~1 GB RAM on a shared box).
-    image: ghcr.io/wosool-ai/base-temporal-auto-setup:1.28.1@${TEMPORAL_DIGEST:?set TEMPORAL_DIGEST (sha256:...) from the mirror run}
+    image: ghcr.io/wosool-ai/base-temporal-auto-setup:1.28.1@sha256:607d68caa111338d754771efb876c92dfcdae06d056e4530bb31cd0f37406e6a
     container_name: postiz-temporal
     restart: unless-stopped
     environment:
