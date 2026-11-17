@@ -76,6 +76,9 @@ services:
       POSTGRES_PWD: ${POSTGRES_PASSWORD}
       POSTGRES_SEEDS: postiz-postgres
       ENABLE_ES: 'false'
+      # SQL visibility allows only 3 Text search attributes; auto-setup's sample ones would take the
+      # slots Postiz needs (organizationId, postId), and its backend then refuses to start.
+      SKIP_ADD_CUSTOM_SEARCH_ATTRIBUTES: 'true'
       TEMPORAL_NAMESPACE: default
     networks: [postiz-private]
     depends_on:
